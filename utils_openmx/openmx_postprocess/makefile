@@ -10,13 +10,42 @@
 #FC = mpif90 -O3 -xHOST -ip -no-prec-div -qopenmp
 #LIB= -L${MKLROOT}/lib/intel64 -L/opt/compiler/intel2018u4/compilers_and_libraries_2018.5.274/linux/lib -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lmkl_blacs_openmpi_lp64 -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -liomp5 -lpthread -lm -ldl -lifcore -lgsl -lgslcblas -lm
 
-GSL_lib = /data/home/yzhong/Tools/gsl-2.7.1/lib
-GSL_include = /data/home/yzhong/Tools/gsl-2.7.1/include
-MKLROOT = /opt/compiler/intel2018u4/compilers_and_libraries_2018.5.274/linux/mkl
-CMPLR_ROOT = /opt/compiler/intel2018u4/compilers_and_libraries_2018.5.274
-CC = mpiicc -O3 -xHOST -ip -no-prec-div -qopenmp -I${MKLROOT}/include/fftw -I${MKLROOT}/include -I${GSL_include} -DDERIVATIVE
-FC = mpiifort -O3 -xHOST -ip -no-prec-div -qopenmp -I${MKLROOT}/include
-LIB = ${CMPLR_ROOT}/linux/compiler/lib/intel64_lin/libiomp5.a ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a ${MKLROOT}/lib/intel64/libmkl_scalapack_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_blacs_intelmpi_lp64.a -Wl,--end-group ${CMPLR_ROOT}/linux/compiler/lib/intel64_lin/libifcoremt.a -lpthread -lm -ldl ${GSL_lib}/libgsl.a
+MKLROOT      = /APP/enhpc/oneapi/mkl/2021.4.0
+FFTW_INCLUDE = /APP/enhpc/library/fftw-3.3.10-openmpi/include
+FFTW_LIB     = /APP/enhpc/library/fftw-3.3.10-openmpi/lib
+MPI_BIN      = /APP/enhpc/mpi/openmpi-v4.0.1-intel/bin
+MPI_LIB      = /APP/enhpc/mpi/openmpi-v4.0.1-intel/lib
+
+# 확인된 GSL 경로 설정
+GSL_LIB      = /APP/enhpc/lammps/29Sep2021/extra_pkg/gsl/2.7/lib
+GSL_INCLUDE  = /APP/enhpc/lammps/29Sep2021/extra_pkg/gsl/2.7/include
+
+###################################################################
+# 컴파일러 및 플래그 (HamGNN 전용 -DDERIVATIVE 추가)
+###################################################################
+# CC: 기존 mpicc 설정 + GSL 헤더 + 식(14)용 DERIVATIVE 플래그
+CC = $(MPI_BIN)/mpicc -O3 -xHOST -qopenmp -I$(MKLROOT)/include -I$(FFTW_INCLUDE) -I$(GSL_INCLUDE) -DDERIVATIVE
+
+# FC: 기존 mpif90 설정
+FC = $(MPI_BIN)/mpif90 -O3 -xHOST -qopenmp -I$(MKLROOT)/include -I$(FFTW_INCLUDE)
+
+###################################################################
+# 라이브러리 링크 (기존 설정 + libgsl.a 직접 링크)
+###################################################################
+LIB = -L$(FFTW_LIB) -lfftw3 \
+      -L$(MKLROOT)/lib/intel64 -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core \
+      -lpthread -lifcore \
+      -L$(MPI_LIB) -lmpi_mpifh -lmpi_usempif08 \
+      $(GSL_LIB)/libgsl.a -lm
+
+	
+# GSL_lib = /data/home/yzhong/Tools/gsl-2.7.1/lib
+# GSL_include = /data/home/yzhong/Tools/gsl-2.7.1/include
+# MKLROOT = /opt/compiler/intel2018u4/compilers_and_libraries_2018.5.274/linux/mkl
+# CMPLR_ROOT = /opt/compiler/intel2018u4/compilers_and_libraries_2018.5.274
+# CC = mpiicc -O3 -xHOST -ip -no-prec-div -qopenmp -I${MKLROOT}/include/fftw -I${MKLROOT}/include -I${GSL_include} -DDERIVATIVE
+# FC = mpiifort -O3 -xHOST -ip -no-prec-div -qopenmp -I${MKLROOT}/include
+# LIB = ${CMPLR_ROOT}/linux/compiler/lib/intel64_lin/libiomp5.a ${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a ${MKLROOT}/lib/intel64/libmkl_scalapack_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a ${MKLROOT}/lib/intel64/libmkl_blacs_intelmpi_lp64.a -Wl,--end-group ${CMPLR_ROOT}/linux/compiler/lib/intel64_lin/libifcoremt.a -lpthread -lm -ldl ${GSL_lib}/libgsl.a
 
 
 #
